@@ -206,11 +206,31 @@
       'Call 000 for any life-threatening emergency.'
     ] });
     const inRegion = (x) => !x.regions || x.regions.includes(sel.code);
+    // Restore region-specific items (e.g. cyclone) that an earlier region removed
+    const starter = g.FCR_STARTER;
+    if (starter) {
+      ['scenarios', 'checklists'].forEach((k) => {
+        p[k] = p[k] || [];
+        (starter[k] || []).filter((x) => x.regions && x.regions.includes(sel.code) && !p[k].some((y) => y.id === x.id))
+          .forEach((x) => p[k].push(JSON.parse(JSON.stringify(x))));
+      });
+    }
     p.scenarios = (p.scenarios || []).filter(inRegion);
     p.checklists = (p.checklists || []).filter(inRegion);
     (p.scenarios || []).forEach((s) => { s.procedures = s.procedures || []; if (!s.procedures.includes('official')) s.procedures.unshift('official'); });
     p.region = { code: sel.code, name: st.name, postcode: sel.postcode || '', power: power.id, water: water.id, gas: gas ? gas.id : 'none',
       summary: [power.name, water.name, gas ? gas.name : 'no mains gas'].join(' · '), dataDate: '2026-11-04' };
+    return p;
+  }
+
+  // Remove all region-derived content, returning the plan to "no state".
+  function clear(plan) {
+    const p = JSON.parse(JSON.stringify(plan));
+    p.contacts = (p.contacts || []).filter((c) => !String(c.id).startsWith('rg-'));
+    p.procedures = (p.procedures || []).filter((x) => x.id !== 'official');
+    (p.scenarios || []).forEach((s) => { s.procedures = (s.procedures || []).filter((x) => x !== 'official'); });
+    if (p.household) p.household.radio = 'Set by region set-up';
+    delete p.region;
     return p;
   }
 
@@ -226,5 +246,5 @@
     return null;
   }
 
-  g.FCR_REGION = { states: S, order: ORDER, detect, apply, validate, national: { health: NATIONAL_HEALTH } };
+  g.FCR_REGION = { states: S, order: ORDER, detect, apply, clear, validate, national: { health: NATIONAL_HEALTH } };
 })(typeof window !== 'undefined' ? window : globalThis);

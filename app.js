@@ -91,7 +91,7 @@
       </div>
       ${installCard(ios)}
       <div class="card"><h2>Look around first</h2><p class="muted">Open a sample plan for your state. It is not verified, and your family's signed plan replaces it.</p>
-        <label class="field" for="dpost">Postcode</label><input type="text" id="dpost" inputmode="numeric" maxlength="4" placeholder="e.g. 2570">
+        <label class="field" for="dpost">Postcode</label><input type="text" id="dpost" inputmode="numeric" maxlength="4" placeholder="e.g. 2000">
         <div id="ddetect" class="small" style="margin-top:6px"></div>
         <label class="field" for="dstate">State or territory</label>
         <select id="dstate"><option value="">Select your state or territory</option>${FCR_REGION.order.map((k) => `<option value="${k}">${esc(FCR_REGION.states[k].name)}</option>`).join('')}</select>
@@ -150,6 +150,8 @@
         <button data-act="print">Print / save PDF</button>
         <button data-act="theme">Theme: ${esc(local.theme || 'auto')}</button>
         <button data-act="about">Plan &amp; security info</button>
+        <button data-act="chgstate">Change state</button>
+        <button class="danger" data-act="resetphone">Reset this phone</button>
       </div></div>`;
   }
   function maintBanner() {
@@ -508,6 +510,35 @@
     else if (act === 'about') showDialog(viewAbout());
     else if (act === 'close') { staged = null; closeDialog(); }
     else if (act === 'apply') commit();
+    else if (act === 'chgstate') {
+      if (state.demo) {
+        const cur = (plan().region || {});
+        showDialog(`<h2>Change state</h2><p class="muted small">Choose the state for this sample plan. Contacts, warnings and region-specific emergencies update to match.</p>
+          <label class="field" for="dpost">Postcode</label><input type="text" id="dpost" inputmode="numeric" maxlength="4" placeholder="e.g. 2000" value="${esc(cur.postcode || '')}">
+          <div id="ddetect" class="small" style="margin-top:6px"></div>
+          <label class="field" for="dstate">State or territory</label>
+          <select id="dstate"><option value="">Select your state or territory</option>${FCR_REGION.order.map((k) => `<option value="${k}" ${k === cur.code ? 'selected' : ''}>${esc(FCR_REGION.states[k].name)}</option>`).join('')}</select>
+          <div class="row" style="margin-top:14px"><button class="grow" data-act="close">Cancel</button><button class="primary grow" data-act="setstate">Change state</button></div>`);
+      } else {
+        showDialog(`<h2>Change state</h2><p>The state for your family plan is set by your coordinator and sealed into the signed plan, so it cannot be changed on this phone.</p>
+          <p class="muted small">Ask the coordinator to run Region set-up again and send the updated plan. To start again from nothing on this phone, use Reset this phone.</p>
+          <div class="row" style="margin-top:14px"><button class="grow" data-act="close">Close</button><button class="danger grow" data-act="resetphone">Reset this phone</button></div>`);
+      }
+    }
+    else if (act === 'setstate') {
+      const code = $('#dstate').value; const pc = $('#dpost').value.trim();
+      if (!code) { toast('Select a state or territory first.'); return; }
+      if (pc) { const d = FCR_REGION.detect(pc); if (!d || !d.codes.includes(code)) { toast(d ? `Postcode ${pc} is in ${d.codes.join('/')}, not ${code}.` : 'Postcode not recognised.'); return; } }
+      state.plan = FCR_REGION.apply(FCR_REGION.clear(state.plan), { code, postcode: pc }); save(SKEY, state); closeDialog(); toast(`State changed to ${FCR_REGION.states[code].name}.`); render();
+    }
+    else if (act === 'resetphone') {
+      if (confirm('Reset this phone? This removes the plan, the trusted coordinator key, the chosen state, checklist ticks and the incident log from this phone. The app returns to first-time set-up.')) {
+        try { localStorage.removeItem(SKEY); localStorage.removeItem(LKEY); } catch (e) {}
+        state = { pin: null, seq: 0, issued: 0, plan: null, log: [], pending: [], demo: false };
+        local = { checks: {}, incident: null, journal: [], theme: '' };
+        closeDialog(); location.hash = '#now'; render(); toast('This phone has been reset.');
+      }
+    }
     else if (act === 'wipe') { if (confirm('Remove the plan and trusted key from this device? You will need a new signed plan from the coordinator.')) { localStorage.removeItem(SKEY); state = { pin: null, seq: 0, issued: 0, plan: null, log: [], pending: [], demo: false }; closeDialog(); location.hash = '#now'; render(); } }
     else if (act === 'paste') { try { const t = await navigator.clipboard.readText(); $('#utext').value = t; runImport(t); } catch (err) { toast('Paste was blocked — long-press the box and choose Paste.'); } }
     else if (act === 'checktext') runImport($('#utext').value);
@@ -561,7 +592,7 @@
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredInstall = e; const b = $('#installBtn'); if (b) b.classList.remove('hidden'); });
   setInterval(() => { const el = $('#elapsed'); if (el && local.incident) el.textContent = elapsed(local.incident.start); }, 30000);
 
-  const APP_VER = '1.4.1';
+  const APP_VER = '1.4.2';
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 

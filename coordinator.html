@@ -26,12 +26,13 @@
     <h2>0 · Region set-up (required)</h2>
     <p class="muted small">Defines which state or territory the household is in. It sets the state emergency, fire, health, power, water and gas numbers, and is sealed into the signed plan so family phones can rely on it.</p>
     <label class="field" for="rpost">Household postcode</label>
-    <input type="text" id="rpost" inputmode="numeric" maxlength="4" placeholder="e.g. 2570" autocomplete="postal-code">
+    <input type="text" id="rpost" inputmode="numeric" maxlength="4" placeholder="e.g. 2000" autocomplete="postal-code">
     <div id="rdetect" class="small" style="margin-top:6px"></div>
     <label class="field" for="rstate">State or territory</label>
     <select id="rstate"></select>
     <div id="rproviders"></div>
     <button class="primary block" style="margin-top:12px" data-act="applyregion">Apply region to draft plan</button>
+    <button class="block" style="margin-top:8px" data-act="clearregion">Clear region (no state)</button>
     <div id="rstatus" class="small" style="margin-top:8px"></div>
   </section>
 

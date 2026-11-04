@@ -226,6 +226,16 @@
           regionStatus(np.region); msg('Region applied to draft. Review, then sign & publish.', true);
           break;
         }
+        case 'clearregion': {
+          let p; try { p = JSON.parse($('#draft').value); } catch (err) { throw new Error('The draft plan is not valid JSON.'); }
+          if (!p.region) { msg('The draft has no region set.', true); break; }
+          if (!confirm('Remove the state, postcode and all state-specific contacts from the draft? Publishing stays blocked until a region is set again.')) break;
+          const np = FCR_REGION.clear(p);
+          $('#draft').value = JSON.stringify(np, null, 2); c.draft = $('#draft').value; persist();
+          $('#rpost').value = ''; $('#rstate').value = ''; renderProviders(null); detectFromPostcode(false); regionStatus(null);
+          msg('Region cleared from the draft. Apply a region before publishing.', true);
+          break;
+        }
         case 'starter':
           if ($('#draft').value.trim() && !confirm('Replace the current draft with the starter plan?')) return;
           $('#draft').value = JSON.stringify(window.FCR_STARTER, null, 2); c.draft = $('#draft').value; persist(); renderRegion(); msg('Starter plan loaded. Complete region set-up, then fill in your family details.', true); break;
