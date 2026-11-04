@@ -16,7 +16,7 @@ An offline Progressive Web App (PWA) family emergency plan for all hazards — c
 | `starter-hazards.js` | All-hazards pack: family roles, supply locations, supplies & maintenance register, hazard checklists, blackout protocol, warning levels |
 | `regions.js` | State/territory pack (all 8 jurisdictions), offline postcode detection, region validation |
 | `fonts/` | Atkinson Hyperlegible Next (SIL Open Font License, `fonts/OFL.txt`), self-hosted for offline use |
-| `img/` | Optional illustrations (hero), cached when present |
+| `img/` | Hero illustration (generated with OpenAI gpt-image-2), cached for offline use |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Offline cache, install metadata, Android share target |
 
 ## 1. Deploy (one time)

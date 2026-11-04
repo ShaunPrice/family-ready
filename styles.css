@@ -53,7 +53,7 @@ main { max-width: 720px; margin: 0 auto; padding: 16px 16px 28px; }
 /* Hero: the one bold element — road-sign type on navy with a signal band */
 .hero { background-color: var(--navy); color: #fff; margin: -16px -16px 18px; padding: 28px 20px 26px; position: relative; }
 .hero.has-art { background-image: linear-gradient(90deg, rgba(14,42,59,.96) 0%, rgba(14,42,59,.82) 45%, rgba(14,42,59,.1) 100%), url('img/hero.webp'); background-size: cover; background-position: 70% center; }
-@media (max-width: 719px) { .hero.has-art { background-image: linear-gradient(180deg, rgba(14,42,59,0) 0%, rgba(14,42,59,.85) 48%, var(--navy) 62%), url('img/hero.webp'); background-size: 175% auto; background-position: 80% top; background-repeat: no-repeat; padding-top: 170px; } }
+@media (max-width: 719px) { .hero.has-art { background-image: linear-gradient(180deg, rgba(14,42,59,0) 0px, rgba(14,42,59,0) 285px, rgba(14,42,59,.92) 370px, var(--navy) 420px), url('img/hero.webp'); background-size: 190% auto; background-position: 95% 0; background-repeat: no-repeat; padding-top: 335px; } }
 .hero::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: var(--signal); }
 .hero h1 { font-size: clamp(2rem, 8.4vw, 2.9rem); line-height: 1.02; letter-spacing: -0.025em; margin: 0 0 14px; max-width: 14ch; }
 .hero p { color: #D6E3EA; font-size: 1.05rem; max-width: 40ch; }
@@ -156,7 +156,8 @@ dialog .dlg { padding: 20px; overflow: auto; max-height: calc(100vh - 40px); }
 
 @media (min-width: 720px) {
   .hero { margin: -16px 0 22px; border-radius: 0 0 var(--r-lg) var(--r-lg); padding: 40px 36px 38px; overflow: hidden; }
-  .hero .actions { grid-template-columns: 1fr 1fr; }
+  .hero .actions { grid-template-columns: auto auto; justify-content: start; max-width: none; }
+  .hero .actions .btn { width: auto; padding: 12px 22px; white-space: nowrap; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 

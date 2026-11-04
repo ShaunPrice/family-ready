@@ -561,7 +561,7 @@
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredInstall = e; const b = $('#installBtn'); if (b) b.classList.remove('hidden'); });
   setInterval(() => { const el = $('#elapsed'); if (el && local.incident) el.textContent = elapsed(local.incident.start); }, 30000);
 
-  const APP_VER = '1.4.0';
+  const APP_VER = '1.4.1';
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
