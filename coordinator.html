@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Plan Coordinator</title>
+<meta name="theme-color" content="#0f5c4d">
+<meta name="robots" content="noindex">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+<style>body{padding-bottom:30px} textarea.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;min-height:260px} textarea.out{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;min-height:110px;word-break:break-all}</style>
+</head>
+<body>
+<header class="top">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z"/><path d="M9 12h6M12 9v6"/></svg>
+  <div class="title">Plan Coordinator</div>
+  <div class="ver" id="hdr"></div>
+</header>
+<main>
+  <div class="banner warn"><b>Coordinator only.</b> <span class="t">This page holds the family signing key. Use it on one trusted device. Family members use the main app.</span></div>
+
+  <section class="card" id="keycard"></section>
+
+  <section class="card" id="regioncard">
+    <h2>0 · Region set-up (required)</h2>
+    <p class="muted small">Defines which state or territory the household is in. It sets the state emergency, fire, health, power, water and gas numbers, and is sealed into the signed plan so family phones can rely on it.</p>
+    <label class="field" for="rpost">Household postcode</label>
+    <input type="text" id="rpost" inputmode="numeric" maxlength="4" placeholder="e.g. 2570" autocomplete="postal-code">
+    <div id="rdetect" class="small" style="margin-top:6px"></div>
+    <label class="field" for="rstate">State or territory</label>
+    <select id="rstate"></select>
+    <div id="rproviders"></div>
+    <button class="primary block" style="margin-top:12px" data-act="applyregion">Apply region to draft plan</button>
+    <div id="rstatus" class="small" style="margin-top:8px"></div>
+  </section>
+
+  <section class="card" id="plancard">
+    <h2>1 · Full plan (send by email or MMS attachment)</h2>
+    <p class="muted small">Edit the plan as JSON. Contacts, checklists and procedures are addressed by their <span class="mono">id</span>. Publishing signs a new version.</p>
+    <textarea class="code" id="draft" spellcheck="false" autocapitalize="off"></textarea>
+    <div class="row wrap" style="margin-top:8px">
+      <button data-act="starter">Load starter plan</button>
+      <button data-act="format">Format / check</button>
+      <button class="primary" data-act="publish">Sign &amp; publish full plan</button>
+    </div>
+    <div id="draftmsg" class="small" style="margin-top:6px"></div>
+  </section>
+
+  <section class="card" id="quickcard">
+    <h2>2 · Quick update (send by SMS)</h2>
+    <p class="muted small">Small signed changes that fit in one or a few SMS messages. They apply on top of the last published plan.</p>
+    <label class="field" for="qtype">Type of update</label>
+    <select id="qtype">
+      <option value="notice">Broadcast notice to family</option>
+      <option value="phone">Change a contact's phone number</option>
+      <option value="meet">Change the active meeting point</option>
+      <option value="raw">Advanced: raw operations</option>
+    </select>
+    <div id="qform"></div>
+    <button class="primary block" style="margin-top:10px" data-act="quick">Sign quick update</button>
+  </section>
+
+  <section class="card hidden" id="outcard">
+    <h2 id="outtitle">Signed output</h2>
+    <div id="outmeta" class="small muted"></div>
+    <textarea class="out" id="out" readonly></textarea>
+    <div class="row wrap" style="margin-top:8px">
+      <button data-act="copy">Copy</button>
+      <button data-act="share">Share…</button>
+      <button data-act="savefile">Save .fcr file</button>
+      <a class="btn" id="smslink" href="#">Open SMS</a>
+      <a class="btn" id="maillink" href="#">Open email</a>
+    </div>
+    <p class="small muted" style="margin-top:8px">Send full plans as an <b>attachment</b> (the .fcr file). Send quick updates as SMS text. Family apps reject anything not signed by this key, so the channel itself does not need to be trusted.</p>
+  </section>
+
+  <section class="card"><h2>History</h2><div id="history" class="small"></div></section>
+  <p class="small muted">Open the <a href="./">family app</a>.</p>
+</main>
+<script src="fcr-core.js"></script>
+<script src="starter-plan.js"></script>
+<script src="regions.js"></script>
+<script src="coordinator.js"></script>
+</body>
+</html>
