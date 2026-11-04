@@ -1,13 +1,13 @@
 {
   "name": "Family Cyber Ready",
   "short_name": "Family Ready",
-  "description": "Offline family checklists, contacts and procedures for critical-infrastructure cyber incidents.",
+  "description": "Offline family emergency plan for Australian households — every hazard, family roles, contacts, supplies and signed updates.",
   "id": "./",
   "start_url": "./#now",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f4f1ea",
-  "theme_color": "#0f5c4d",
+  "background_color": "#0E2A3B",
+  "theme_color": "#0E2A3B",
   "lang": "en-AU",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },

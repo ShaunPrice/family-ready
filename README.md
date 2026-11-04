@@ -2,6 +2,8 @@
 
 An offline Progressive Web App (PWA) family emergency plan for all hazards — critical-infrastructure cyber incidents and total communications blackout, bushfire, flood, storm, cyclone (QLD, WA, NT), heatwave, house fire, earthquake, tsunami, shelter-in-place, pandemic and medical emergencies. It records who does what, where supplies are kept, and when equipment must be checked or replaced. One codebase installs on Android and iPhone from the browser.
 
+**For households in Australia only.** Emergency numbers, warning systems, utilities and postcode detection cover the eight Australian states and territories; the app is not designed for use elsewhere.
+
 ## Contents
 
 | File | Purpose |
@@ -13,6 +15,8 @@ An offline Progressive Web App (PWA) family emergency plan for all hazards — c
 | `starter-plan.js` | Starter plan: national contacts, infrastructure checklists, procedures |
 | `starter-hazards.js` | All-hazards pack: family roles, supply locations, supplies & maintenance register, hazard checklists, blackout protocol, warning levels |
 | `regions.js` | State/territory pack (all 8 jurisdictions), offline postcode detection, region validation |
+| `fonts/` | Atkinson Hyperlegible Next (SIL Open Font License, `fonts/OFL.txt`), self-hosted for offline use |
+| `img/` | Optional illustrations (hero), cached when present |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Offline cache, install metadata, Android share target |
 
 ## 1. Deploy (one time)

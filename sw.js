@@ -1,13 +1,15 @@
 /* Family Cyber Ready — service worker: full offline shell + Android share target */
-const VERSION = 'fcr-v1.3.0';
+const VERSION = 'fcr-v1.4.0';
 const SHELL = [
   './', './index.html', './trust.js', './styles.css', './fcr-core.js', './starter-plan.js', './starter-hazards.js', './regions.js', './app.js', './manifest.webmanifest',
   './coordinator.html', './coordinator.js',
+  './fonts/ahn-400.woff2', './fonts/ahn-700.woff2', './fonts/ahn-800.woff2',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'
 ];
+const OPTIONAL = ['./img/hero.webp', './img/hero-mobile.webp'];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL).then(() => Promise.all(OPTIONAL.map((u) => c.add(u).catch(() => {}))))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== VERSION && k !== 'fcr-share').map((k) => caches.delete(k)))).then(() => self.clients.claim()));

@@ -55,20 +55,48 @@
 
   function viewOnboard() {
     const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const I = {
+      hazard: '<path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/>',
+      people: '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2c3 .2 5.5 2.6 5.5 5.8"/>',
+      phone: '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>',
+      kit: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M12 11v5M9.5 13.5h5"/>',
+      seal: '<path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z"/><path d="m9 12 2 2 4-4"/>',
+      lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+      pin: '<path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>'
+    };
+    const svg = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[k]}</svg>`;
+    const row = (k, t, d) => `<li>${svg(k)}<div><b>${t}</b><span>${d}</span></div></li>`;
     return `
-      <div class="card"><h1>Set up your family plan</h1>
-        <p>This app holds your family's checklists, contacts and procedures for outages of water, power, phone or payment systems. It works with no internet once installed.</p>
-        <p>Your coordinator will send you a <b>signed plan file</b> by email or MMS, or a code starting <span class="mono">FCR1</span>.</p>
-        <a class="btn primary block" href="#update">Install my family plan</a>
-        <p class="small muted">This app supports, and does not replace, official emergency advice. Always follow instructions from emergency services and utilities. State contact numbers checked ${esc((window.FCR_REGION && '4 Nov 2026') || '')}; verify locally.</p>
+      <section class="hero">
+        <div class="where">${svg('pin')}For households in Australia only</div>
+        <h1>Your family's emergency plan, on every phone.</h1>
+        <p>Checklists, contacts and roles for every kind of emergency. Keeps working when the power, mobile network and internet are down.</p>
+        <div class="actions">
+          <a class="btn primary block" href="#update">Install my family plan</a>
+          <a class="btn ghost block" href="coordinator.html">Create a plan for my family</a>
+        </div>
+      </section>
+      <h2 class="section-h">What it covers</h2>
+      <ul class="covers">
+        ${row('hazard', 'Every emergency', 'Bushfire, flood, storm, cyclone, heatwave, house fire, earthquake, tsunami, pandemic and medical emergencies — and cyber attacks on power, water, phone and payment systems, including a total communications blackout.')}
+        ${row('people', 'Who does what', 'Each family member sees their own role and tasks the moment something happens.')}
+        ${row('phone', 'The right numbers', 'One tap to 000, your state SES and fire services, your power, water and gas faults lines, and family.')}
+        ${row('kit', 'Supplies and equipment', 'Where everything is kept, and when each item needs checking or replacing.')}
+        ${row('seal', 'Updates you can trust', 'Your family coordinator sends signed updates by email or SMS. Fake messages are rejected.')}
+        ${row('lock', 'Private by design', 'No account and no tracking. Your plan is stored only on your family\'s phones.')}
+      </ul>
+      <div class="card"><h2>Getting started</h2>
+        <p><b>Family member:</b> your coordinator sends you a signed plan file by email or MMS, or a code starting <span class="mono">FCR1</span>. Tap <i>Install my family plan</i>.</p>
+        <p style="margin:0"><b>Coordinator:</b> one person creates the plan, sets your state and sends it to everyone.</p>
       </div>
       ${installCard(ios)}
-      <div class="card"><h2>Look around first</h2><p class="muted">Load a starter plan for your state to explore. It is not verified and will be replaced when you install your family's signed plan.</p>
+      <div class="card"><h2>Look around first</h2><p class="muted">Open a sample plan for your state. It is not verified, and your family's signed plan replaces it.</p>
         <label class="field" for="dpost">Postcode</label><input type="text" id="dpost" inputmode="numeric" maxlength="4" placeholder="e.g. 2570">
         <div id="ddetect" class="small" style="margin-top:6px"></div>
         <label class="field" for="dstate">State or territory</label>
-        <select id="dstate"><option value="">— Select —</option>${FCR_REGION.order.map((k) => `<option value="${k}">${esc(FCR_REGION.states[k].name)}</option>`).join('')}</select>
-        <button class="block" style="margin-top:10px" data-act="demo">Open starter plan (demo)</button></div>`;
+        <select id="dstate"><option value="">Select your state or territory</option>${FCR_REGION.order.map((k) => `<option value="${k}">${esc(FCR_REGION.states[k].name)}</option>`).join('')}</select>
+        <button class="block" style="margin-top:12px" data-act="demo">Open sample plan</button></div>
+      <p class="small muted" style="padding:0 4px">This app supports, and does not replace, official emergency advice. Always follow instructions from emergency services and utilities. Contact numbers checked 4 November 2026.</p>`;
   }
   function installCard(ios) {
     const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
@@ -106,7 +134,7 @@
       ${state.demo ? '<div class="banner warn"><b>Demo plan — not verified.</b> <span class="t">Install your family\'s signed plan from the Update tab.</span></div>' : ''}
       ${notices}
       ${maintBanner()}
-      ${local.incident ? incHtml.replace('<div class="card"><h2>Work through', rolesCard(local.incident, (p.scenarios || []).find((s) => s.id === local.incident.scenario)) + '<div class="card"><h2>Work through') : rolesCard(null, null) + incHtml}
+      ${local.incident ? incHtml.replace('<div class="card"><h2>Work through', rolesCard(local.incident, (p.scenarios || []).find((s) => s.id === local.incident.scenario)) + '<div class="card"><h2>Work through') : incHtml + rolesCard(null, null)}
       <div class="card"><h2>Where we meet</h2>
         ${act ? `<p><span class="pill ok">ACTIVE</span> <b>${esc(act.name)}</b><br>${esc(act.detail)}</p>` : ''}
         ${(h.meeting || []).filter((m) => m !== act).map((m) => `<p class="muted"><b>${esc(m.name)}</b><br>${esc(m.detail)}</p>`).join('')}
@@ -452,6 +480,8 @@
     document.querySelectorAll('nav.tabs a').forEach((a) => { if (a.dataset.tab === navTab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     if (tab === 'procs' && sub) { const el = document.getElementById('proc-' + sub); if (el) el.scrollIntoView({ block: 'start' }); } else window.scrollTo(0, 0);
     renderPrint();
+    const hero = document.querySelector('.hero');
+    if (hero) { const im = new Image(); im.onload = () => hero.classList.add('has-art'); im.src = 'img/hero.webp'; }
   }
   function applyTheme() { if (local.theme) document.documentElement.setAttribute('data-theme', local.theme); else document.documentElement.removeAttribute('data-theme'); }
 
@@ -531,7 +561,7 @@
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredInstall = e; const b = $('#installBtn'); if (b) b.classList.remove('hidden'); });
   setInterval(() => { const el = $('#elapsed'); if (el && local.incident) el.textContent = elapsed(local.incident.start); }, 30000);
 
-  const APP_VER = '1.3.0';
+  const APP_VER = '1.4.0';
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
