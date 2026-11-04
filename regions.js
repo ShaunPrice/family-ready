@@ -205,6 +205,9 @@
       `Power faults: ${power.name}. Water faults: ${water.name}.${gas ? ' Gas leaks: ' + gas.name + '.' : ''}`,
       'Call 000 for any life-threatening emergency.'
     ] });
+    const inRegion = (x) => !x.regions || x.regions.includes(sel.code);
+    p.scenarios = (p.scenarios || []).filter(inRegion);
+    p.checklists = (p.checklists || []).filter(inRegion);
     (p.scenarios || []).forEach((s) => { s.procedures = s.procedures || []; if (!s.procedures.includes('official')) s.procedures.unshift('official'); });
     p.region = { code: sel.code, name: st.name, postcode: sel.postcode || '', power: power.id, water: water.id, gas: gas ? gas.id : 'none',
       summary: [power.name, water.name, gas ? gas.name : 'no mains gas'].join(' · '), dataDate: '2026-11-04' };

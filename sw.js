@@ -1,7 +1,7 @@
 /* Family Cyber Ready — service worker: full offline shell + Android share target */
-const VERSION = 'fcr-v1.2.0';
+const VERSION = 'fcr-v1.3.0';
 const SHELL = [
-  './', './index.html', './trust.js', './styles.css', './fcr-core.js', './starter-plan.js', './regions.js', './app.js', './manifest.webmanifest',
+  './', './index.html', './trust.js', './styles.css', './fcr-core.js', './starter-plan.js', './starter-hazards.js', './regions.js', './app.js', './manifest.webmanifest',
   './coordinator.html', './coordinator.js',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'
 ];

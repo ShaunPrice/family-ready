@@ -105,7 +105,8 @@
     return `
       ${state.demo ? '<div class="banner warn"><b>Demo plan — not verified.</b> <span class="t">Install your family\'s signed plan from the Update tab.</span></div>' : ''}
       ${notices}
-      ${incHtml}
+      ${maintBanner()}
+      ${local.incident ? incHtml.replace('<div class="card"><h2>Work through', rolesCard(local.incident, (p.scenarios || []).find((s) => s.id === local.incident.scenario)) + '<div class="card"><h2>Work through') : rolesCard(null, null) + incHtml}
       <div class="card"><h2>Where we meet</h2>
         ${act ? `<p><span class="pill ok">ACTIVE</span> <b>${esc(act.name)}</b><br>${esc(act.detail)}</p>` : ''}
         ${(h.meeting || []).filter((m) => m !== act).map((m) => `<p class="muted"><b>${esc(m.name)}</b><br>${esc(m.detail)}</p>`).join('')}
@@ -123,6 +124,12 @@
         <button data-act="about">Plan &amp; security info</button>
       </div></div>`;
   }
+  function maintBanner() {
+    if (!(plan().supplies || []).length) return '';
+    const sm = supplySummary();
+    if (!sm.overdue && !sm.due) return '';
+    return `<a class="banner ${sm.overdue ? 'urgent' : 'warn'}" href="#kit/due" style="display:block;text-decoration:none"><b>Supplies &amp; equipment:</b> <span class="t">${sm.overdue ? sm.overdue + ' overdue' : ''}${sm.overdue && sm.due ? ', ' : ''}${sm.due ? sm.due + ' due soon' : ''} — tap to review.</span></a>`;
+  }
   function elapsed(start) {
     const m = Math.floor((Date.now() - start) / 60000);
     return m < 60 ? `${m} min elapsed` : `${Math.floor(m / 60)} h ${m % 60} min elapsed`;
@@ -134,6 +141,93 @@
     const done = (c.items || []).filter((i) => ch[i.id]).length;
     return { done, total };
   }
+
+  // ---------------- roles ----------------
+  const roleOf = (id) => ((plan().roles || []).find((r) => r.id === id) || { id, title: id, duties: [] });
+  const membersFor = (rid) => (plan().members || []).filter((m) => (m.roles || []).includes(rid));
+  const meMember = () => (plan().members || []).find((m) => m.id === local.me) || null;
+  const myRoles = () => { const m = meMember(); return m ? (m.roles || []) : []; };
+  const isMine = (item) => !!(item.role && myRoles().includes(item.role));
+  function whoPill(item) {
+    if (!item.role) return item.who ? ` <span class="pill">${esc(item.who)}</span>` : '';
+    const names = membersFor(item.role).map((m) => m.name);
+    return ` <span class="pill ${isMine(item) ? 'ok' : ''}">${isMine(item) ? 'YOU · ' : ''}${esc(roleOf(item.role).title)}${names.length && !isMine(item) ? ': ' + esc(names.join(', ')) : ''}</span>`;
+  }
+
+  // ---------------- supplies & maintenance ----------------
+  const todayISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+  const fmtD = (d) => d ? (d instanceof Date ? d : new Date(d + 'T00:00:00')).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+  function addMonths(iso, n) { const d = new Date(iso + 'T00:00:00'); d.setMonth(d.getMonth() + Number(n)); return d; }
+  function supplyStatus(s) {
+    const localLast = (local.supplyChecks || {})[s.id];
+    const last = [s.last, localLast].filter(Boolean).sort().pop() || '';
+    const now = new Date(); const why = []; let st = 'ok'; let next = null;
+    const bump = (lvl) => { if (lvl === 'overdue' || (lvl === 'due' && st === 'ok')) st = lvl; };
+    if (s.check) {
+      if (!last) { bump('due'); why.push('Not yet checked'); }
+      else { next = addMonths(last, s.check); const days = (next - now) / 864e5; if (days < 0) { bump('overdue'); why.push('Check overdue'); } else if (days <= 30) { bump('due'); why.push('Check due within 30 days'); } }
+    }
+    if (s.exp) { const days = (new Date(s.exp + 'T00:00:00') - now) / 864e5; if (days < 0) { bump('overdue'); why.push('Expired — replace'); } else if (days <= 60) { bump('due'); why.push('Expires within 60 days'); } }
+    return { st, last, next, why, localOnly: !!(localLast && localLast > (s.last || '')) };
+  }
+  function supplySummary() {
+    const out = { overdue: 0, due: 0, ok: 0 };
+    (plan().supplies || []).forEach((s) => { out[supplyStatus(s).st]++; });
+    return out;
+  }
+  const locOf = (id) => ((plan().locations || []).find((l) => l.id === id) || { id, name: id || 'Unassigned', detail: '' });
+
+  function viewKit(filter) {
+    const p = plan(); if (!p) return viewOnboard();
+    const sup = p.supplies || [];
+    if (!sup.length) return '<h1>Supplies &amp; equipment</h1><div class="card"><p class="muted">No supplies have been recorded in this plan yet. Ask the coordinator to add them.</p></div>';
+    const sm = supplySummary();
+    const show = (s) => filter !== 'due' || supplyStatus(s).st !== 'ok';
+    const locs = (p.locations || []).concat([{ id: '', name: 'Other / unassigned', detail: '' }]);
+    const body = locs.map((l) => {
+      const items = sup.filter((s) => (s.loc || '') === l.id || (!l.id && !(p.locations || []).some((x) => x.id === s.loc))).filter(show);
+      if (!items.length) return '';
+      return `<div class="group-h">${esc(l.name)}</div>${l.detail ? `<p class="small muted" style="margin:-2px 2px 6px">${esc(l.detail)}</p>` : ''}<div class="card tight">${items.map((s) => {
+        const ss = supplyStatus(s);
+        return `<div class="contact" style="align-items:flex-start"><div class="grow">
+          <div class="name">${esc(s.item)} ${ss.st !== 'ok' ? `<span class="pill ${ss.st === 'overdue' ? 'urgent' : 'warn'}">${ss.st === 'overdue' ? 'OVERDUE' : 'DUE'}</span>` : '<span class="pill ok">OK</span>'}</div>
+          ${s.qty ? `<div class="small">Quantity: ${esc(s.qty)}</div>` : ''}
+          <div class="small muted">${s.check ? `Check every ${esc(s.check)} month${s.check > 1 ? 's' : ''} · last ${esc(fmtD(ss.last))}${ss.localOnly ? ' (this phone)' : ''}${ss.next ? ' · next ' + esc(fmtD(ss.next)) : ''}` : 'No routine check'}${s.exp ? ` · expires ${esc(fmtD(s.exp))}` : ''}</div>
+          ${s.replace ? `<div class="small"><b>Replace:</b> ${esc(s.replace)}</div>` : ''}
+          ${s.note ? `<div class="small muted">${esc(s.note)}</div>` : ''}
+          ${ss.why.length ? `<div class="small" style="color:var(--${ss.st === 'overdue' ? 'urgent' : 'warn'})">${esc(ss.why.join(' · '))}</div>` : ''}
+          ${s.role ? `<div class="small">Responsible: ${esc(roleOf(s.role).title)}${membersFor(s.role).length ? ' — ' + esc(membersFor(s.role).map((m) => m.name).join(', ')) : ''}</div>` : ''}
+        </div>${s.check ? `<button class="small" data-act="supchk" data-id="${esc(s.id)}" style="min-height:40px">Checked</button>` : ''}</div>`;
+      }).join('')}</div>`;
+    }).join('');
+    return `<h1>Supplies &amp; equipment</h1>
+      <div class="row wrap" style="margin-bottom:8px"><span class="pill urgent">${sm.overdue} overdue</span><span class="pill warn">${sm.due} due soon</span><span class="pill ok">${sm.ok} OK</span></div>
+      <div class="row" style="margin-bottom:6px"><a class="btn grow ${filter !== 'due' ? 'primary' : ''}" href="#kit">All items</a><a class="btn grow ${filter === 'due' ? 'primary' : ''}" href="#kit/due">Needs attention</a></div>
+      <p class="small muted">"Checked" records the check on this phone. The coordinator records it for everyone with a quick update.</p>
+      ${body || '<div class="card"><p class="muted">Nothing needs attention.</p></div>'}`;
+  }
+
+  function rolesCard(inc, sc) {
+    const p = plan();
+    const members = p.members || [];
+    if (!members.length) return '';
+    const me = meMember();
+    if (!me) return `<div class="card"><h2>Who is using this phone?</h2><p class="muted small">Your own tasks will be highlighted in every checklist.</p>
+      <select id="meSel"><option value="">— Choose —</option>${members.map((m) => `<option value="${esc(m.id)}">${esc(m.name)}</option>`).join('')}</select></div>`;
+    const roles = (me.roles || []).map(roleOf);
+    let tasks = '';
+    if (inc && sc) {
+      const mine = [];
+      (sc.checklists || []).forEach((cid) => { const c = p.checklists.find((x) => x.id === cid); if (c) c.items.forEach((i) => { if (isMine(i)) mine.push({ c, i }); }); });
+      tasks = mine.length ? `<h3 style="margin-top:10px">Your tasks now</h3><ul class="list">${mine.map(({ c, i }) => { const done = (local.checks[c.id] || {})[i.id]; return `<li><label class="check ${done ? 'done' : ''}"><input type="checkbox" data-chk="${esc(c.id)}" data-item="${esc(i.id)}" ${done ? 'checked' : ''}><span class="txt">${esc(i.t)} <span class="small muted">(${esc(c.title)})</span></span></label></li>`; }).join('')}</ul>` : '';
+    }
+    return `<div class="card"><div class="row"><h2 class="grow" style="margin:0">${esc(me.name)} — your role${roles.length > 1 ? 's' : ''}</h2><button class="small" data-act="notme" style="min-height:36px">Change</button></div>
+      ${roles.length ? roles.map((r) => `<p style="margin-top:8px"><b>${esc(r.title)}</b>${r.duties && r.duties.length ? `</p><ul class="small" style="margin:0 0 6px;padding-left:20px">${r.duties.map((d) => `<li>${esc(d)}</li>`).join('')}</ul>` : '</p>'}`).join('') : '<p class="muted">No role assigned yet.</p>'}
+      ${tasks}
+      <details style="margin-top:8px"><summary class="small" style="cursor:pointer;min-height:32px">Who does what (whole family)</summary>
+        <ul class="small" style="padding-left:18px">${(p.roles || []).map((r) => `<li><b>${esc(r.title)}:</b> ${esc(membersFor(r.id).map((m) => m.name).join(', ') || 'unassigned')}</li>`).join('')}</ul></details></div>`;
+  }
+
   function viewLists(sub) {
     const p = plan(); if (!p) return viewOnboard();
     if (sub) {
@@ -143,7 +237,7 @@
         return `<a href="#lists" class="small">← All checklists</a>
           <div class="card" style="margin-top:8px"><h1>${esc(c.title)}</h1>${c.desc ? `<p class="muted">${esc(c.desc)}</p>` : ''}
             <div class="progress"><i style="width:${pr.total ? (pr.done / pr.total) * 100 : 0}%"></i></div><div class="small muted">${pr.done} of ${pr.total} done</div>
-            <ul class="list" style="margin-top:6px">${c.items.map((i) => `<li><label class="check ${ch[i.id] ? 'done' : ''}"><input type="checkbox" data-chk="${esc(c.id)}" data-item="${esc(i.id)}" ${ch[i.id] ? 'checked' : ''}><span class="txt">${esc(i.t)}${i.who ? ` <span class="pill">${esc(i.who)}</span>` : ''}</span></label></li>`).join('')}</ul>
+            <ul class="list" style="margin-top:6px">${c.items.map((i, n) => `${i.sec && (n === 0 || c.items[n - 1].sec !== i.sec) ? `<li class="group-h" style="margin:12px 0 0">${esc(i.sec)}</li>` : ''}<li><label class="check ${ch[i.id] ? 'done' : ''}"><input type="checkbox" data-chk="${esc(c.id)}" data-item="${esc(i.id)}" ${ch[i.id] ? 'checked' : ''}><span class="txt">${esc(i.t)}${whoPill(i)}</span></label></li>`).join('')}</ul>
             <button class="block" style="margin-top:10px" data-act="reset" data-id="${esc(c.id)}">Reset this checklist</button></div>`;
       }
     }
@@ -216,7 +310,9 @@
       <section><h2>Home and meeting points</h2><p><b>${esc(h.name)}</b>, ${esc(h.address)}<br>Radio: ${esc(h.radio || '')}<br>${esc(h.notes || '')}</p>
       <table>${(h.meeting || []).map((m) => `<tr><td><b>${esc(m.name)}</b>${m.id === h.activeMeeting ? ' (active)' : ''}</td><td>${esc(m.detail)}</td></tr>`).join('')}</table></section>
       <section><h2>Contacts</h2><table>${p.contacts.map((c) => `<tr><td>${esc(c.group)}</td><td><b>${esc(c.name)}</b></td><td>${esc(fmtPhone(c.phone))}</td><td>${esc(c.note || '')}</td></tr>`).join('')}</table></section>
-      ${p.checklists.map((c) => `<section><h2>${esc(c.title)}</h2>${c.items.map((i) => `<div><span class="box"></span>${esc(i.t)}</div>`).join('')}</section>`).join('')}
+      ${(p.roles || []).length ? `<section><h2>Who does what</h2><table>${p.roles.map((r) => `<tr><td><b>${esc(r.title)}</b></td><td>${esc(membersFor(r.id).map((m) => m.name).join(', ') || 'unassigned')}</td><td>${esc((r.duties || []).join('; '))}</td></tr>`).join('')}</table></section>` : ''}
+      ${(p.supplies || []).length ? `<section><h2>Supplies, equipment and maintenance</h2><table><tr><td><b>Item</b></td><td><b>Where</b></td><td><b>Qty</b></td><td><b>Check</b></td><td><b>Replace</b></td><td><b>Last checked</b></td></tr>${p.supplies.map((s) => `<tr><td>${esc(s.item)}</td><td>${esc(locOf(s.loc).name)}</td><td>${esc(s.qty || '')}</td><td>${s.check ? 'every ' + esc(s.check) + ' mth' : ''}</td><td>${esc(s.replace || '')}${s.exp ? ' (exp ' + esc(s.exp) + ')' : ''}</td><td>${esc(supplyStatus(s).last || '')}</td></tr>`).join('')}</table></section>` : ''}
+      ${p.checklists.map((c) => `<section><h2>${esc(c.title)}</h2>${c.items.map((i) => `<div>${i.sec ? '<i>' + esc(i.sec) + ':</i> ' : ''}<span class="box"></span>${esc(i.t)}${i.role ? ' — ' + esc(roleOf(i.role).title) : ''}</div>`).join('')}</section>`).join('')}
       ${p.procedures.map((x) => `<section><h2>${esc(x.title)}</h2><ol>${x.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol></section>`).join('')}`;
   }
 
@@ -350,7 +446,7 @@
     applyTheme(); header();
     const h = (location.hash || '#now').slice(1);
     const [tab, sub] = h.split('/');
-    const map = { now: viewNow, lists: () => viewLists(), list: () => viewLists(sub), contacts: () => viewContacts(''), procs: () => viewProcs(sub), update: viewUpdate };
+    const map = { now: viewNow, lists: () => viewLists(), list: () => viewLists(sub), contacts: () => viewContacts(''), procs: () => viewProcs(sub), kit: () => viewKit(sub), update: viewUpdate };
     $('#view').innerHTML = (map[tab] || viewNow)();
     const navTab = tab === 'list' ? 'lists' : (map[tab] ? tab : 'now');
     document.querySelectorAll('nav.tabs a').forEach((a) => { if (a.dataset.tab === navTab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
@@ -375,6 +471,8 @@
     else if (act === 'endinc') { if (confirm('Stand down incident mode? Checklist ticks are kept until you reset them.')) { local.journal.push({ ts: Date.now(), text: 'Stood down' }); local.incident = null; save(LKEY, local); render(); } }
     else if (act === 'jadd') { const t = $('#jtext'); if (t && t.value.trim()) { local.journal.push({ ts: Date.now(), text: t.value.trim().slice(0, 500) }); save(LKEY, local); render(); } }
     else if (act === 'reset') { if (confirm('Clear all ticks on this checklist?')) { delete local.checks[b.dataset.id]; save(LKEY, local); render(); } }
+    else if (act === 'supchk') { local.supplyChecks = local.supplyChecks || {}; local.supplyChecks[b.dataset.id] = todayISO(); save(LKEY, local); toast('Recorded on this phone. Tell the coordinator so it is recorded for everyone.'); render(); }
+    else if (act === 'notme') { local.me = ''; save(LKEY, local); render(); }
     else if (act === 'print') { renderPrint(); window.print(); }
     else if (act === 'theme') { local.theme = local.theme === '' ? 'dark' : local.theme === 'dark' ? 'light' : ''; save(LKEY, local); render(); }
     else if (act === 'about') showDialog(viewAbout());
@@ -405,6 +503,7 @@
       const f = t.files[0];
       if (f.size > 512 * 1024) { toast('File too large to be a plan.'); return; }
       runImport(await f.text()); t.value = '';
+    } else if (t.id === 'meSel') { local.me = t.value; save(LKEY, local); render();
     } else if (t.id === 'fpok') { const a = $('#applyBtn'); if (a) a.disabled = !t.checked; }
   });
   document.addEventListener('input', (e) => {
@@ -432,7 +531,7 @@
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredInstall = e; const b = $('#installBtn'); if (b) b.classList.remove('hidden'); });
   setInterval(() => { const el = $('#elapsed'); if (el && local.incident) el.textContent = elapsed(local.incident.start); }, 30000);
 
-  const APP_VER = '1.2.0';
+  const APP_VER = '1.3.0';
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 

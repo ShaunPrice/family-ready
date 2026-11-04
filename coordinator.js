@@ -51,6 +51,17 @@
       (s.checklists || []).forEach((id) => { if (!(p.checklists || []).some((x) => x.id === id)) problems.push(`scenario ${s.id} refers to missing checklist ${id}`); });
       (s.procedures || []).forEach((id) => { if (!(p.procedures || []).some((x) => x.id === id)) problems.push(`scenario ${s.id} refers to missing procedure ${id}`); });
     });
+    chk(p.members, 'members'); chk(p.roles, 'roles'); chk(p.locations, 'locations'); chk(p.supplies, 'supplies');
+    const roleIds = new Set((p.roles || []).map((r) => r.id));
+    const locIds = new Set((p.locations || []).map((l) => l.id));
+    (p.members || []).forEach((m) => (m.roles || []).forEach((r) => { if (!roleIds.has(r)) problems.push(`member ${m.id} has unknown role ${r}`); }));
+    (p.checklists || []).forEach((cl) => (cl.items || []).forEach((i) => { if (i.role && !roleIds.has(i.role)) problems.push(`item ${cl.id}/${i.id} has unknown role ${i.role}`); }));
+    (p.supplies || []).forEach((s) => {
+      if (s.loc && !locIds.has(s.loc)) problems.push(`supply ${s.id} has unknown location ${s.loc}`);
+      if (s.role && !roleIds.has(s.role)) problems.push(`supply ${s.id} has unknown role ${s.role}`);
+      if (s.check != null && s.check !== '' && !(Number(s.check) > 0)) problems.push(`supply ${s.id} check interval must be months > 0`);
+      ['last', 'exp'].forEach((k) => { if (s[k] && !/^\d{4}-\d{2}-\d{2}$/.test(s[k])) problems.push(`supply ${s.id} ${k} must be YYYY-MM-DD`); });
+    });
     const rErr = FCR_REGION.validate(p);
     if (rErr) problems.push(rErr);
     if (problems.length) throw new Error(problems.join('; '));
@@ -58,7 +69,8 @@
   }
   function msg(text, ok) { $('#draftmsg').innerHTML = `<span style="color:var(--${ok ? 'ok' : 'urgent'})">${esc(text)}</span>`; }
 
-  function renderQuickForm() {
+  function renderQuickForm() { renderQuickForm0(); if ($('#qmem')) syncRoleBoxes(); }
+  function renderQuickForm0() {
     const t = $('#qtype').value;
     const p = c.published;
     const f = $('#qform');
@@ -67,16 +79,32 @@
       <label class="field">Message</label><textarea id="qtext" maxlength="600" placeholder="e.g. Power expected back 6pm. Stay home. Next check-in 4pm."></textarea>`;
     else if (t === 'phone') f.innerHTML = `<label class="field">Contact</label><select id="qcontact">${p.contacts.map((x) => `<option value="${esc(x.id)}">${esc(x.group)} — ${esc(x.name)}</option>`).join('')}</select>
       <label class="field">New number</label><input type="text" id="qphone" inputmode="tel" placeholder="04xx xxx xxx">`;
+    else if (t === 'check') f.innerHTML = (p.supplies || []).length ? `<label class="field">Item checked</label><select id="qsup">${p.supplies.map((s) => `<option value="${esc(s.id)}">${esc(s.item)}${s.last ? ' (last ' + esc(s.last) + ')' : ''}</option>`).join('')}</select>
+      <label class="field">Date checked</label><input type="text" id="qdate" value="${new Date().toISOString().slice(0, 10)}" placeholder="YYYY-MM-DD">
+      <label class="field">New expiry date (optional, if replaced)</label><input type="text" id="qexp" placeholder="YYYY-MM-DD">` : '<p class="banner warn">The plan has no supplies yet.</p>';
+    else if (t === 'roles') f.innerHTML = (p.members || []).length ? `<label class="field">Family member</label><select id="qmem">${p.members.map((m) => `<option value="${esc(m.id)}">${esc(m.name)}</option>`).join('')}</select>
+      <div id="qrolebox" style="margin-top:8px">${(p.roles || []).map((r) => `<label class="check"><input type="checkbox" class="qrole" value="${esc(r.id)}"><span class="txt">${esc(r.title)}</span></label>`).join('')}</div>` : '<p class="banner warn">The plan has no family members yet.</p>';
     else if (t === 'meet') f.innerHTML = `<label class="field">Active meeting point</label><select id="qmeet">${(p.household.meeting || []).map((m) => `<option value="${esc(m.id)}" ${m.id === p.household.activeMeeting ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select>
       <label class="field">Optional notice</label><input type="text" id="qmeetnote" placeholder="e.g. Go to secondary meeting point by 3pm">`;
-    else f.innerHTML = `<label class="field">Operations (JSON list)</label><textarea class="code" id="qraw" style="min-height:120px" spellcheck="false">[["n","info","Test message"]]</textarea>
+    else if (t === 'raw') f.innerHTML = `<label class="field">Operations (JSON list)</label><textarea class="code" id="qraw" style="min-height:120px" spellcheck="false">[["n","info","Test message"]]</textarea>
       <p class="small muted">["s","path","value"] set · ["d","path"] delete · ["a","path",{item with id}] add/replace · ["n","info|warn|urgent","text"] notice. Paths use ids, e.g. <span class="mono">contacts/cf1/phone</span>.</p>`;
   }
 
+  function syncRoleBoxes() {
+    const m = (c.published.members || []).find((x) => x.id === $('#qmem').value) || { roles: [] };
+    document.querySelectorAll('.qrole').forEach((b) => { b.checked = (m.roles || []).includes(b.value); });
+  }
   function buildOps() {
     const t = $('#qtype').value;
     if (t === 'notice') { const txt = $('#qtext').value.trim(); if (!txt) throw new Error('Enter a message.'); return [['n', $('#qlevel').value, txt]]; }
     if (t === 'phone') { const ph = $('#qphone').value.replace(/[^\d+]/g, ''); if (!ph) throw new Error('Enter a number.'); return [['s', `contacts/${$('#qcontact').value}/phone`, ph]]; }
+    if (t === 'check') {
+      const d = $('#qdate').value.trim(); const ex = $('#qexp').value.trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) throw new Error('Date checked must be YYYY-MM-DD.');
+      if (ex && !/^\d{4}-\d{2}-\d{2}$/.test(ex)) throw new Error('Expiry must be YYYY-MM-DD.');
+      const id = $('#qsup').value; const ops = [['s', `supplies/${id}/last`, d]]; if (ex) ops.push(['s', `supplies/${id}/exp`, ex]); return ops;
+    }
+    if (t === 'roles') { const roles = Array.from(document.querySelectorAll('.qrole:checked')).map((x) => x.value); return [['s', `members/${$('#qmem').value}/roles`, roles]]; }
     if (t === 'meet') { const ops = [['s', 'household/activeMeeting', $('#qmeet').value]]; const n = $('#qmeetnote').value.trim(); if (n) ops.push(['n', 'warn', n]); return ops; }
     const ops = JSON.parse($('#qraw').value); if (!Array.isArray(ops)) throw new Error('Operations must be a JSON list.'); return ops;
   }
@@ -245,6 +273,7 @@
 
   document.addEventListener('change', async (e) => {
     if (e.target.id === 'qtype') renderQuickForm();
+    if (e.target.id === 'qmem') syncRoleBoxes();
     if (e.target.id === 'rstate') renderProviders(null);
     if (['rpow', 'rwat', 'rgas'].includes(e.target.id)) $('#' + e.target.id + '-other').classList.toggle('hidden', e.target.value !== 'other');
     if (e.target.id === 'restore' && e.target.files[0]) {

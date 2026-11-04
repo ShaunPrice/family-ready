@@ -10,7 +10,7 @@
       radio: 'Set by region set-up',
       notes: 'Main water stop-valve: by the front tap. Switchboard/meter box: side of garage. Gas meter: front left.',
       meeting: [
-        { id: 'mp1', name: 'Primary — at home', detail: 'Stay home unless told to leave. Check in by SMS on the hour.' },
+        { id: 'mp1', name: 'Primary — at home', detail: 'Stay home for infrastructure outages. For bushfire, flood or tsunami, leave early on the plan trigger — do not wait to be told. Check in by SMS on the hour.' },
         { id: 'mp2', name: 'Secondary — nearby', detail: 'Local park / community centre (name it here).' },
         { id: 'mp3', name: 'Out of area', detail: 'Relative or friend in another suburb or region (address here).' }
       ]
@@ -62,7 +62,7 @@
         { id: 'w2', t: 'Boil-water notice: bring water to a rolling boil before drinking, cooking, brushing teeth or making ice.' },
         { id: 'w3', t: 'Do-not-drink notice: boiling does NOT make it safe — use stored or bottled water only.' },
         { id: 'w4', t: 'Use stored water for drinking first; keep other water for hygiene and flushing.' },
-        { id: 'w5', t: 'Fill clean containers and the bath while supply is still running (if water is safe).' },
+        { id: 'w5', t: 'Fill clean containers and the bath while supply runs (if water is safe); never leave young children near a filled bath.' },
         { id: 'w6', t: 'Discard ice and drinks made with tap water after the notice time.' },
         { id: 'w7', t: 'Check on infants, elderly and pets — they are most affected.' }
       ]},
@@ -77,7 +77,7 @@
       { id: 'payments', title: 'Payments, fuel and supplies', desc: 'EFTPOS, ATMs or fuel pumps unavailable.', items: [
         { id: 'f1', t: 'Use emergency cash reserve sparingly (small notes and coins).' },
         { id: 'f2', t: 'Check fuel level; do not drive unnecessarily.' },
-        { id: 'f3', t: 'Check medication supply for every family member (at least 7 days).' },
+        { id: 'f3', t: 'Check medication supply for every family member (aim for 14 days).' },
         { id: 'f4', t: 'Inventory food and water; plan meals using fridge food first, then freezer, then pantry.' },
         { id: 'f5', t: 'Avoid panic buying; share with neighbours where you can.' }
       ]},
@@ -138,12 +138,12 @@
         'Use heavy-duty extension leads rated for the load.',
         'Let the generator cool before refuelling; store fuel away from the house.'
       ]},
-      { id: 'leave', title: 'Deciding to leave home', summary: 'Stay at home unless it becomes unsafe or authorities advise otherwise.', steps: [
+      { id: 'leave', title: 'Deciding to leave home', summary: 'For outages, stay home unless it becomes unsafe. For bushfire, flood or tsunami, leave early on your trigger — do not wait to be told.', steps: [
         'Leave if authorities advise it, or if home becomes unsafe (no water for days, extreme heat with no power, medical need).',
         'Agree destination (out-of-area meeting point) and route before leaving.',
         'Take the go-kit, medications, documents, chargers, cash and pets.',
         'SMS the family and relay contact with destination and expected arrival time.',
-        'Switch off mains power and water if leaving for more than a day.'
+        'If leaving for more than a day and it is safe, turn off power, gas (meter or cylinder) and water.'
       ]},
       { id: 'updates', title: 'How plan updates work', summary: 'For every family member.', steps: [
         'Only the coordinator can create updates; they are digitally signed.',

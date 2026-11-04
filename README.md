@@ -1,6 +1,6 @@
 # Family Cyber Ready
 
-An offline Progressive Web App (PWA) for managing a family through a cyber incident affecting critical infrastructure (power, water, telecommunications, payments). One codebase installs on Android and iPhone from the browser.
+An offline Progressive Web App (PWA) family emergency plan for all hazards — critical-infrastructure cyber incidents and total communications blackout, bushfire, flood, storm, cyclone (QLD, WA, NT), heatwave, house fire, earthquake, tsunami, shelter-in-place, pandemic and medical emergencies. It records who does what, where supplies are kept, and when equipment must be checked or replaced. One codebase installs on Android and iPhone from the browser.
 
 ## Contents
 
@@ -10,7 +10,8 @@ An offline Progressive Web App (PWA) for managing a family through a cyber incid
 | `coordinator.html`, `coordinator.js` | Coordinator console: signing-key custody, plan editor, full-plan and SMS quick-update signing, key rotation |
 | `trust.js` | Trust anchor for single-family hardened forks (empty on the public site) |
 | `fcr-core.js` | Shared envelope format, ECDSA verification, update operations |
-| `starter-plan.js` | Starter plan: national contacts, checklists, procedures |
+| `starter-plan.js` | Starter plan: national contacts, infrastructure checklists, procedures |
+| `starter-hazards.js` | All-hazards pack: family roles, supply locations, supplies & maintenance register, hazard checklists, blackout protocol, warning levels |
 | `regions.js` | State/territory pack (all 8 jurisdictions), offline postcode detection, region validation |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Offline cache, install metadata, Android share target |
 
@@ -53,6 +54,12 @@ The region is sealed inside the signed plan. Family phones show it in the header
 - Cross-border postcodes are flagged for manual choice: 2540, 2611, 2618, 2620, 3644, 3691, 3707, 4383, 4385 and 0872. This list is based on general knowledge of border localities and was not tested against an authoritative dataset; any other postcode is mapped by its Australia Post range.
 - Items marked *Confirm this number with the provider* (Logan and Townsville water, Allgas in Queensland, and any *Other* entry) could only be confirmed from secondary sources.
 
+## 2b. Roles, supplies and maintenance
+
+- **Roles:** eight roles (Incident coordinator, Deputy, Communications & check-ins, Care lead, Supplies & equipment lead, Home & utilities lead, Pets & animals, Grab bag & documents) are assigned to family members in `members`. Checklist items carry a `role`. Each phone asks "Who is using this phone?" and then shows that person's duties and, in incident mode, **Your tasks now**. Reassign roles with the *Assign family roles* quick update.
+- **Supplies register (Kit tab):** 29 items with location, quantity, check interval (months), replacement rule, responsible role, last-checked and expiry dates. Items show OK, Due (within 30 days, expiry within 60 days, or never checked) or Overdue. *Checked* records a check on that phone; the coordinator records it for everyone with the *Record an equipment / supplies check* quick update.
+- **Key intervals (sources in `starter-hazards.js`):** smoke alarms tested monthly, vacuumed 6-monthly, replaced at 10 years; stored water and food checked each season, water replaced within 12 months; torches and batteries 6-monthly; first aid kit yearly and after use; whole kit review twice a year; plan review yearly; home fire escape practised twice a year. Extinguisher checks, power-bank top-ups, generator test runs and petrol rotation have no official Australian household figure and are marked *assumption* in the app.
+
 ## 3. Operating during an incident
 
 | Change | Channel | Coordinator action |
@@ -60,9 +67,11 @@ The region is sealed inside the signed plan. Family phones show it in the header
 | Broadcast notice (info / warn / urgent) | SMS | Quick update → Notice |
 | Change a contact number | SMS | Quick update → Contact phone |
 | Change active meeting point | SMS | Quick update → Meeting point |
+| Record an equipment check | SMS | Quick update → Equipment / supplies check |
+| Reassign roles | SMS | Quick update → Assign family roles |
 | Larger edits | Email / MMS attachment | Edit JSON → Sign & publish full plan |
 
-Quick updates are typically 240–280 characters (2 SMS segments). A full plan is about 6.5 KB and is sent as an attachment.
+Quick updates are typically 240–280 characters (2 SMS segments). A full all-hazards plan is about 17 KB and is sent as an attachment.
 
 Family members: iPhone — copy the SMS, open the app, Update → Paste → Check and preview → Apply. Android — share the message to *Family Ready*.
 
@@ -95,10 +104,15 @@ Residual risks (accepted by design): compromise of the coordinator device while 
 
 ## 7. Verification performed (4 Nov 2026)
 
+v1.3 all-hazards proof (21 checks): QLD plan includes cyclone and NSW excludes it; all hazard scenarios present; 8 roles, 3 members, 8 locations, 29 supplies; unknown role reference rejected; full plan ~17 KB; role and equipment-check quick updates fit 2 SMS; Kit tab groups items by location with intervals; unchecked items flagged due; phone-level check recorded; maintenance banner on Now; phone user sees own roles and duties; signed role reassignment and equipment check applied; 3-month item checked in January shown overdue; incident mode lists the person's own tasks; hazard checklists show Before/During/After with owners; blackout protocol present; printout includes roles and maintenance schedule.
+
+
 Region proof (16 checks): publish blocked without region; postcodes 2570→NSW, 3000→VIC, 6000→WA detected; 2620 flagged as cross-border; postcode/state mismatch refused; NSW distributor list offered; NSW pack applied with correct numbers; family contacts preserved; enrolment preview, header and Now screen show the signed region; coordinator refuses an update removing the region; family phones reject a signed update setting an invalid state and a signed plan with no region; WA demo loads WA numbers. A separate unit check built and validated the pack for all eight jurisdictions.
 
 
 Original security suite (re-run, all passing), including: enrolment fingerprint match; apply blocked until fingerprint confirmed; email-wrapped codes parsed; out-of-order updates held then applied in sequence; replay skipped; single-character tampering rejected; attacker-key forgery rejected (000 number unchanged); foreign-key plan rejected; offline reload with checklist state retained; key rotation followed by new-key update; signed backup restored on a third device; wrong coordinator passphrase refused. Not yet tested on physical iOS/Android hardware.
+
+An independent content review against Australian official guidance was carried out before release; 25 findings were corrected (including flood electrical safety, a gas-leak and carbon-monoxide procedure, life-support registration, early-leave triggers, assisted evacuation, AusAlert alerts and the 106 text emergency number).
 
 ## 7a. Public-use notice
 
